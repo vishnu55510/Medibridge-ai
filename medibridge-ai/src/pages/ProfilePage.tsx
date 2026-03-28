@@ -166,8 +166,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
+                <label htmlFor="pf-name" className="block text-sm font-medium text-slate-700 mb-1">Name *</label>
                 <input 
+                  id="pf-name"
                   required
                   type="text" 
                   value={formData.name}
@@ -176,8 +177,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Relationship *</label>
+                <label htmlFor="pf-rel" className="block text-sm font-medium text-slate-700 mb-1">Relationship *</label>
                 <select 
+                  id="pf-rel"
                   required
                   value={formData.relationship}
                   onChange={e => setFormData({...formData, relationship: e.target.value})}
@@ -191,8 +193,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
+                <label htmlFor="pf-dob" className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
                 <input 
+                  id="pf-dob"
                   type="date" 
                   value={formData.dateOfBirth}
                   onChange={e => setFormData({...formData, dateOfBirth: e.target.value})}

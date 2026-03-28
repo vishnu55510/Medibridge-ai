@@ -13,6 +13,11 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
+  where: vi.fn(),
+  limit: vi.fn(),
+  doc: vi.fn(),
+  updateDoc: vi.fn(),
+  getDoc: vi.fn(),
   getDocs: vi.fn(() => Promise.resolve({ docs: [] })),
 }));
 
@@ -54,7 +59,7 @@ describe('ChatInterface Component', () => {
   it('allows sending a message', async () => {
     render(<ChatInterface user={mockUser} profileId="profile1" />);
     
-    const input = screen.getByPlaceholderText(/Ask about your medical records/i);
+    const input = screen.getByPlaceholderText(/Ask about your medications/i);
     fireEvent.change(input, { target: { value: 'What is my blood pressure?' } });
     
     const sendButton = screen.getByRole('button', { name: /Send message/i });
@@ -82,7 +87,7 @@ describe('ChatInterface Component', () => {
       expect(screen.getByText(/Hello! I'm your personal health assistant/i)).toBeInTheDocument();
     });
 
-    const input = screen.getByPlaceholderText(/Ask about your medical records/i);
+    const input = screen.getByPlaceholderText(/Ask about your medications/i);
     fireEvent.change(input, { target: { value: 'Test error' } });
     fireEvent.click(screen.getByRole('button', { name: /Send message/i }));
 

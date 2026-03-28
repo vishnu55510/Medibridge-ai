@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import LabTrendsPage from './LabTrendsPage';
 import { useProfile } from '../contexts/ProfileContext';
 import * as firestore from 'firebase/firestore';
@@ -16,6 +16,10 @@ vi.mock('firebase/firestore', async () => {
     collection: vi.fn(),
     query: vi.fn(),
     where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
     onSnapshot: vi.fn()
   };
 });

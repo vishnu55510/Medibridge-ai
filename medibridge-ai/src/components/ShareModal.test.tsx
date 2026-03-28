@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ShareModal from './ShareModal';
 import * as firestore from 'firebase/firestore';
 
@@ -11,6 +11,12 @@ vi.mock('firebase/firestore', async () => {
     ...actual,
     addDoc: vi.fn(),
     collection: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
+    query: vi.fn(),
+    where: vi.fn(),
+    limit: vi.fn(),
+    orderBy: vi.fn(),
     serverTimestamp: vi.fn()
   };
 });

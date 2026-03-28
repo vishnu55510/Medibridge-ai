@@ -20,8 +20,18 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
+  where: vi.fn(),
+  limit: vi.fn(),
+  doc: vi.fn(),
+  updateDoc: vi.fn(),
   onSnapshot: vi.fn((q, cb) => {
-    cb({ docs: [] });
+    // Return a mock profile if it looks like a profiles query
+    // Otherwise return empty for records/notifications/meds
+    cb({ 
+      docs: q?.toString().includes('profiles') 
+        ? [{ id: '123', data: () => ({ name: 'Test User', relationship: 'Self' }) }] 
+        : [] 
+    });
     return vi.fn();
   }),
   getDocs: vi.fn(() => Promise.resolve({ docs: [] })),
@@ -49,7 +59,7 @@ describe('Integration Flow', () => {
     
     // Wait for Dashboard to load (since we mocked auth to be logged in)
     await waitFor(() => {
-      expect(screen.getByText('MediBridge AI')).toBeInTheDocument();
+      expect(screen.getAllByText('MediBridge AI')[0]).toBeInTheDocument();
     });
 
     // Verify Records tab is active

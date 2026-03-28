@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import EmergencyPage from './EmergencyPage';
 import { useProfile } from '../contexts/ProfileContext';
 import * as firestore from 'firebase/firestore';
@@ -16,6 +16,10 @@ vi.mock('firebase/firestore', async () => {
     collection: vi.fn(),
     query: vi.fn(),
     where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
     getDocs: vi.fn()
   };
 });
@@ -39,9 +43,11 @@ describe('EmergencyPage', () => {
 
     render(<EmergencyPage user={mockUser} />);
     
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('O+')).toBeInTheDocument();
-    expect(screen.getByText('Peanuts')).toBeInTheDocument();
-    expect(screen.getByText('EpiPen')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.getByText('O+')).toBeInTheDocument();
+      expect(screen.getByText('Peanuts')).toBeInTheDocument();
+      expect(screen.getByText('EpiPen')).toBeInTheDocument();
+    });
   });
 });

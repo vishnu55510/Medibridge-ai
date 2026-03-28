@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TimelinePage from './TimelinePage';
 import { useProfile } from '../contexts/ProfileContext';
 import * as firestore from 'firebase/firestore';
@@ -18,6 +18,10 @@ vi.mock('firebase/firestore', async () => {
     collection: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
+    where: vi.fn(),
+    limit: vi.fn(),
+    doc: vi.fn(),
+    updateDoc: vi.fn(),
     onSnapshot: vi.fn(),
   };
 });
