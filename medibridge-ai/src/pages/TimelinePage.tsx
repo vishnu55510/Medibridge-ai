@@ -62,6 +62,14 @@ export default function TimelinePage({ user }: TimelinePageProps) {
     }
   };
 
+  const formatExtractedData = (data: string) => {
+    try {
+      return JSON.stringify(JSON.parse(data), null, 2);
+    } catch (e) {
+      return data; // Return raw string if not valid JSON
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -158,7 +166,7 @@ export default function TimelinePage({ user }: TimelinePageProps) {
                       </summary>
                       <div className="mt-3 p-4 bg-slate-900 rounded-lg overflow-x-auto">
                         <pre className="text-xs text-green-400 font-mono">
-                          {JSON.stringify(JSON.parse(record.extractedData), null, 2)}
+                          {formatExtractedData(record.extractedData)}
                         </pre>
                       </div>
                     </details>

@@ -81,10 +81,11 @@ export default function Layout({ user }: LayoutProps) {
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-200">
           <span className="text-xl font-bold text-indigo-600">MediBridge AI</span>
           <button 
+            aria-label="Close mobile menu"
             className="lg:hidden text-slate-500 hover:text-slate-700"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6" aria-hidden="true" />
           </button>
         </div>
 
@@ -111,7 +112,7 @@ export default function Layout({ user }: LayoutProps) {
           </select>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        <nav aria-label="Main Navigation" className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -159,10 +160,13 @@ export default function Layout({ user }: LayoutProps) {
         <header className="bg-white border-b border-slate-200 lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">
             <button
+              aria-label="Open mobile menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
               onClick={() => setIsMobileMenuOpen(true)}
               className="text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-6 h-6" aria-hidden="true" />
             </button>
             <span className="text-lg font-bold text-indigo-600">MediBridge AI</span>
             <NotificationsPopover user={user} />

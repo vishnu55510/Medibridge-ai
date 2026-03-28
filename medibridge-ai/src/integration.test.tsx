@@ -72,5 +72,23 @@ describe('Integration Flow', () => {
     await waitFor(() => {
       expect(screen.getByText('Hello')).toBeInTheDocument();
     });
+
+    // Navigate to Timeline (simulated via sidebar click if possible, or direct route)
+    // Since we are mocking Layout, we can look for the Timeline link
+    const timelineLink = screen.getByRole('link', { name: /Timeline/i });
+    fireEvent.click(timelineLink);
+
+    await waitFor(() => {
+      expect(screen.getByText('Health Timeline')).toBeInTheDocument();
+    });
+
+    // Open Share Modal
+    const shareBtn = screen.getByRole('button', { name: /Share Records/i });
+    fireEvent.click(shareBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByText('Share Medical Records')).toBeInTheDocument();
+    });
   });
 });

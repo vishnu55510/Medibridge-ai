@@ -78,14 +78,23 @@ export default function ShareModal({ user, profileId, records, onClose }: ShareM
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div 
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="share-modal-title"
+        className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden"
+      >
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5 text-indigo-600" />
+          <h2 id="share-modal-title" className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <LinkIcon className="w-5 h-5 text-indigo-600" aria-hidden="true" />
             Share Medical Records
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors">
-            <X className="w-5 h-5" />
+          <button 
+            aria-label="Close share modal"
+            onClick={onClose} 
+            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 

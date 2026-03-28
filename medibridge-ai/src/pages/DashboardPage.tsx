@@ -81,7 +81,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
     return (
       <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-slate-200">
         <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Activity className="w-8 h-8 text-indigo-600" />
+          <Activity className="w-8 h-8 text-indigo-600" aria-hidden="true" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900 mb-4">Welcome to MediBridge AI</h2>
         <p className="text-slate-600 mb-8 max-w-md mx-auto">
@@ -89,7 +89,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         </p>
         <Link 
           to="/profile" 
-          className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+          className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600"
         >
           Create Profile
         </Link>
@@ -109,11 +109,11 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-slate-900 flex items-center">
-              <FileText className="w-5 h-5 mr-2 text-indigo-500" />
+              <FileText className="w-5 h-5 mr-2 text-indigo-500" aria-hidden="true" />
               Recent Records
             </h3>
-            <Link to="/timeline" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center">
-              View all <ChevronRight className="w-4 h-4 ml-1" />
+            <Link to="/timeline" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-sm">
+              View all <ChevronRight className="w-4 h-4 ml-1" aria-hidden="true" />
             </Link>
           </div>
           
@@ -136,7 +136,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                 <div key={record.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center mr-3">
-                      <FileText className="w-5 h-5 text-indigo-600" />
+                      <FileText className="w-5 h-5 text-indigo-600" aria-hidden="true" />
                     </div>
                     <div>
                       <p className="font-medium text-slate-900 text-sm">{record.type}</p>
@@ -155,11 +155,11 @@ export default function DashboardPage({ user }: DashboardPageProps) {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-slate-900 flex items-center">
-                <Pill className="w-5 h-5 mr-2 text-green-500" />
+                <Pill className="w-5 h-5 mr-2 text-green-500" aria-hidden="true" />
                 Active Meds
               </h3>
-              <Link to="/medications" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center">
-                Manage <ChevronRight className="w-4 h-4 ml-1" />
+              <Link to="/medications" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-sm">
+                Manage <ChevronRight className="w-4 h-4 ml-1" aria-hidden="true" />
               </Link>
             </div>
             
@@ -181,7 +181,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-medium text-indigo-600 flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
+                        <Clock className="w-3 h-3 mr-1" aria-hidden="true" />
                         {med.frequency}
                       </p>
                     </div>
@@ -197,19 +197,19 @@ export default function DashboardPage({ user }: DashboardPageProps) {
             <div className="space-y-2">
               <Link 
                 to="/upload" 
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600"
               >
                 Upload New Record
               </Link>
               <Link 
                 to="/chat" 
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600"
               >
                 Ask AI Assistant
               </Link>
               <Link 
                 to="/emergency" 
-                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors mt-4"
+                className="block w-full text-center px-4 py-2.5 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors mt-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-600"
               >
                 Emergency Info
               </Link>
