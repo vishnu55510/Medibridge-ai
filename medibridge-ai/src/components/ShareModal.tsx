@@ -4,6 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { MedicalRecord } from '../types';
 import { X, Copy, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { AuditLogger } from '../utils/AuditLogger';
 
 interface ShareModalProps {
   user: User;
@@ -53,6 +54,13 @@ export default function ShareModal({ user, profileId, records, onClose }: ShareM
         records: selectedRecordsData,
         createdAt: serverTimestamp(),
         expiresAt: expiresAt,
+      });
+      
+      // HIPAA Audit Log
+      await AuditLogger.log(user.uid, 'SHARE_LINK_CREATE', { 
+        profileId, 
+        shareId: shareDoc.id, 
+        recordCount: selectedRecords.size 
       });
 
       const url = `${window.location.origin}/share/${shareDoc.id}`;
