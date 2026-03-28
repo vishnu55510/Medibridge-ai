@@ -58,7 +58,7 @@ describe('UploadRecord Component', () => {
     await waitFor(() => {
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toBeInTheDocument();
-      expect(errorElement).toHaveTextContent(/Gemini API Error/i);
+      expect(errorElement).toHaveTextContent(/Failed to process document/i);
     });
   });
 });

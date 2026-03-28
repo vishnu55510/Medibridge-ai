@@ -48,3 +48,17 @@ export interface AppNotification {
   createdAt: any;
   type: 'medication' | 'alert' | 'system';
 }
+
+export interface UploadRecordProps {
+  user: any; // User from firebase/auth
+  profileId: string;
+}
+
+export interface LabTrendsPageProps {
+  user: any; // User from firebase/auth
+}
+
+export interface ChatInterfaceProps {
+  user: any;
+  profileId: string;
+}

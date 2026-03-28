@@ -5,11 +5,8 @@ import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import { Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
-
-interface ChatInterfaceProps {
-  user: User;
-  profileId: string;
-}
+import { ChatInterfaceProps } from '../types';
+import { withRetry } from '../utils/RetryHandler';
 
 interface Message {
   role: 'user' | 'model';
@@ -77,7 +74,7 @@ Details: ${data.extractedData}
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
       const systemInstruction = `
         You are MediBridge AI, a personalized health assistant. 
         You must answer the user's questions and provide recommendations BASED STRICTLY AND ONLY on their previous medical records provided below.
@@ -96,19 +93,25 @@ Details: ${data.extractedData}
         { role: 'user', parts: [{ text: userMessage }] }
       ];
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.2
-        }
+      const response = await withRetry(async () => {
+        return await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.2
+          }
+        });
       });
 
       setMessages(prev => [...prev, { role: 'model', content: response.text || "I'm sorry, I couldn't process that." }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "I encountered an error while trying to respond. Please try again." }]);
+      let errorMsg = "I encountered an error while trying to respond. Please try again.";
+      if (error?.message?.includes('429') || error?.message?.includes('quota')) {
+        errorMsg = "AI rate limit exceeded. Please wait a minute or upgrade your Gemini API quota in Google AI Studio.";
+      }
+      setMessages(prev => [...prev, { role: 'model', content: errorMsg }]);
     } finally {
       setIsLoading(false);
     }

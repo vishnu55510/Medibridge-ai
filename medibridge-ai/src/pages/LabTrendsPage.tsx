@@ -3,7 +3,8 @@ import { User } from 'firebase/auth';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useProfile } from '../contexts/ProfileContext';
-import { MedicalRecord } from '../types';
+import { MedicalRecord, LabTrendsPageProps } from '../types';
+import { withRetry } from '../utils/RetryHandler';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity, TrendingUp } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
@@ -11,10 +12,10 @@ import { GoogleGenAI } from '@google/genai';
 /**
  * LabTrendsPage Component
  * 
- * Provides a visual dashboard of medical lab results over time using Recharts
- * and leverages Google Gemini AI to analyze trends and correlate them with patient history.
+ * Visualizes medical data trends using Recharts and generates AI-driven health insights.
+ * Requirements: HIPAA-compliant data handling and efficient client-side memoization.
  * 
- * @param {LabTrendsPageProps} props - Component props containing the current authenticated user.
+ * @param {LabTrendsPageProps} props - Component props containing the authenticated user.
  */
 export default function LabTrendsPage({ user }: LabTrendsPageProps) {
   const { activeProfile } = useProfile();
@@ -41,7 +42,7 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
         id: doc.id,
         ...doc.data()
       })) as MedicalRecord[];
-      
+
       // Sort by date ascending for charts
       fetchedRecords.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       setLabRecords(fetchedRecords);
@@ -56,36 +57,38 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
 
   const generateInsights = async () => {
     if (labRecords.length === 0) return;
-    
+
     setLoadingInsights(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+
       const labDataContext = labRecords.map(r => {
         let extracted = {};
         try {
           if (r.extractedData) extracted = JSON.parse(r.extractedData);
-        } catch (e) {}
+        } catch (e) { }
         return `Date: ${r.date}\nSummary: ${r.summary}\nData: ${JSON.stringify(extracted)}`;
       }).join('\n\n');
 
       const prompt = `Analyze the following lab reports for ${activeProfile?.name} and provide a brief, easy-to-understand summary of any trends, improvements, or areas of concern. Keep it under 150 words.\n\n${labDataContext}`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `As a medical data assistant, analyze these lab trends for ${activeProfile?.name}. 
-        Identify specific biomarker changes (e.g., rising/falling trends), provide clinical context for these values, 
-        and suggest general lifestyle or monitoring questions for their next doctor visit. 
-        
-        DATA:
-        ${labDataContext}
-        
-        RESPONSE FORMAT:
-        - Key Observations: [3 bullet points]
-        - Potential Trends: [Brief paragraph]
-        - Recommended Questions for Doctor: [2-3 points]
-        
-        (Disclaimer: Always include a medical disclaimer that this is AI-generated and not professional medical advice.)`,
+      const response = await withRetry(async () => {
+        return await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: `As a medical data assistant, analyze these lab trends for ${activeProfile?.name}. 
+          Identify specific biomarker changes (e.g., rising/falling trends), provide clinical context for these values, 
+          and suggest general lifestyle or monitoring questions for their next doctor visit. 
+          
+          DATA:
+          ${labDataContext}
+          
+          RESPONSE FORMAT:
+          - Key Observations: [3 bullet points]
+          - Potential Trends: [Brief paragraph]
+          - Recommended Questions for Doctor: [2-3 points]
+          
+          (Disclaimer: Always include a medical disclaimer that this is AI-generated and not professional medical advice.)`,
+        });
       });
 
       setInsights(response.text || 'No insights generated.');
@@ -98,29 +101,27 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
   };
 
   // Extract common metrics for charting (e.g., Cholesterol, Blood Sugar)
-  // This is a simplified example. In a real app, you'd need robust parsing of the extractedData JSON.
-  const chartData = labRecords.map(record => {
-    const dataPoint: any = { date: record.date };
-    try {
-      if (record.extractedData) {
-        const parsed = JSON.parse(record.extractedData);
-        // Look for common test names in the parsed data
-        // This assumes the AI extracted tests into an array of objects like { name: "Cholesterol", value: "150", unit: "mg/dL" }
-        if (parsed.tests && Array.isArray(parsed.tests)) {
-          parsed.tests.forEach((test: any) => {
-            if (test.name && test.value) {
-              // Try to parse numeric value
-              const numValue = parseFloat(test.value.replace(/[^0-9.]/g, ''));
-              if (!isNaN(numValue)) {
-                dataPoint[test.name] = numValue;
+  const chartData = React.useMemo(() => {
+    return labRecords.map(record => {
+      const dataPoint: any = { date: record.date };
+      try {
+        if (record.extractedData) {
+          const parsed = JSON.parse(record.extractedData);
+          if (parsed.tests && Array.isArray(parsed.tests)) {
+            parsed.tests.forEach((test: any) => {
+              if (test.name && test.value) {
+                const numValue = parseFloat(test.value.replace(/[^0-9.]/g, ''));
+                if (!isNaN(numValue)) {
+                  dataPoint[test.name] = numValue;
+                }
               }
-            }
-          });
+            });
+          }
         }
-      }
-    } catch (e) {}
-    return dataPoint;
-  }).filter(dp => Object.keys(dp).length > 1); // Only keep points with actual data
+      } catch (e) { }
+      return dataPoint;
+    }).filter(dp => Object.keys(dp).length > 1);
+  }, [labRecords]);
 
   // Extract unique metric names for charting logic
   const metrics = React.useMemo(() => {
@@ -165,7 +166,7 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
                 <TrendingUp className="w-5 h-5 mr-2 text-indigo-600" />
                 AI Trend Analysis
               </h2>
-              <button 
+              <button
                 onClick={generateInsights}
                 disabled={loadingInsights}
                 className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
@@ -173,7 +174,7 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
                 {loadingInsights ? 'Analyzing...' : 'Generate Insights'}
               </button>
             </div>
-            
+
             {insights ? (
               <div className="prose prose-sm max-w-none text-slate-700">
                 <p>{insights}</p>
@@ -195,7 +196,7 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickMargin={10} />
                     <YAxis stroke="#64748b" fontSize={12} tickMargin={10} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
@@ -204,11 +205,11 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
                       const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
                       const color = colors[index % colors.length];
                       return (
-                        <Line 
-                          key={metric} 
-                          type="monotone" 
-                          dataKey={metric} 
-                          stroke={color} 
+                        <Line
+                          key={metric}
+                          type="monotone"
+                          dataKey={metric}
+                          stroke={color}
                           strokeWidth={2}
                           dot={{ r: 4, strokeWidth: 2 }}
                           activeDot={{ r: 6 }}

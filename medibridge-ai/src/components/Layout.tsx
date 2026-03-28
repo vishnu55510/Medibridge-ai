@@ -112,12 +112,13 @@ export default function Layout({ user }: LayoutProps) {
           </select>
         </div>
 
-        <nav aria-label="Main Navigation" className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        <nav aria-label="Main Navigation" id="mobile-menu" className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => setIsMobileMenuOpen(false)}
+              aria-label={`Navigate to ${item.label}`}
               className={({ isActive }) => `
                 flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors
                 ${isActive 

@@ -4,7 +4,10 @@ import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleGenAI } from '@google/genai';
-import { UploadCloud, File, Loader2, CheckCircle } from 'lucide-react';
+import { UploadCloud, File, Loader2, CheckCircle, Shield } from 'lucide-react';
+import { AuditLogger } from '../utils/AuditLogger';
+import { withRetry } from '../utils/RetryHandler';
+import { UploadRecordProps } from '../types';
 
 /**
  * UploadRecord Component
@@ -41,47 +44,55 @@ const UploadRecord = React.memo(function UploadRecord({ user, profileId }: Uploa
       });
 
       // 2. Process with Gemini to extract structured data
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
       const prompt = `
-        You are an expert clinical data analyst. Analyze this medical document.
+        You are an expert clinical data analyst specialized in HIPAA-compliant data extraction. 
+        Analyze this medical document (image or PDF) with 100% accuracy.
+        
         Extract precisely the following structured fields and return strictly as JSON:
         
         {
           "type": "prescription" | "lab_result" | "clinical_note" | "other",
           "date": "YYYY-MM-DD",
-          "doctorName": "full name",
-          "hospital": "facility name",
-          "summary": "concise medical summary",
+          "doctorName": "full name of the physician",
+          "hospital": "healthcare facility or clinic name",
+          "summary": "a professional 1-2 sentence medical summary of the document",
           "extractedData": {
-             "tests": [{"name": "test name", "value": "numeric or text", "unit": "unit", "range": "normal range"}],
-             "medications": [{"name": "drug", "dosage": "dose", "frequency": "frequency", "instructions": "notes"}],
-             "findings": ["list of key clinical results"]
+             "tests": [{"name": "test/biomarker", "value": "numeric/text", "unit": "unit", "range": "reference range"}],
+             "medications": [{"name": "medication name", "dosage": "dose", "frequency": "frequency", "instructions": "usage notes"}],
+             "findings": ["list of key clinical observations or diagnoses"]
           }
         }
         
-        If a field is missing, use null. For lab results, prioritize numeric values in the 'tests' array.
+        CRITICAL INSTRUCTIONS:
+        - If a field is missing, use null. 
+        - For lab results, capture EVERY numeric value in the 'tests' array.
+        - Ensure the date is in ISO format (YYYY-MM-DD).
+        - Maintain clinical terminology.
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: {
-          parts: [
-            { text: prompt },
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType: file.type
+      const response = await withRetry(async () => {
+        return await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: file.type
+                }
               }
-            }
-          ]
-        },
-        config: {
-          responseMimeType: 'application/json'
-        }
+            ]
+          },
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
       });
 
       const extractedJson = JSON.parse(response.text || '{}');
-      
+
       // Normalize type for UI consistency
       let recordType = 'Other';
       if (extractedJson.type === 'prescription') recordType = 'Prescription';
@@ -112,12 +123,23 @@ const UploadRecord = React.memo(function UploadRecord({ user, profileId }: Uploa
         type: 'system'
       });
 
+      // 5. HIPAA Audit Log
+      await AuditLogger.log(user.uid, 'RECORD_UPLOAD', { 
+        profileId, 
+        recordType, 
+        fileName: file.name 
+      });
+
       setUploadSuccess(true);
       setTimeout(() => setUploadSuccess(false), 3000);
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError(err instanceof Error ? err.message : "Failed to process document");
-      handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/profiles/${profileId}/records`);
+    } catch (error: any) {
+      console.error('Error processing record:', error);
+      let errorMsg = 'Failed to process document. Please try again.';
+      if (error?.message?.includes('429') || error?.message?.includes('quota')) {
+        errorMsg = 'AI rate limit exceeded. Please wait a minute or upgrade your Gemini API quota in Google AI Studio.';
+      }
+      setError(errorMsg);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/profiles/${profileId}/records`);
     } finally {
       setIsUploading(false);
     }
@@ -142,14 +164,13 @@ const UploadRecord = React.memo(function UploadRecord({ user, profileId }: Uploa
 
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-          isDragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
-        } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${isDragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
+          } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         aria-label="File upload dropzone"
         aria-describedby="upload-hint"
       >
         <input {...getInputProps()} aria-label="File upload input" />
-        
+
         <div aria-live="polite">
           {isUploading ? (
             <div className="flex flex-col items-center text-indigo-600">

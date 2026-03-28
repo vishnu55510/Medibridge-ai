@@ -12,9 +12,21 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isValidProfile() {
+      let data = request.resource.data;
+      return data.name is string && data.name.size() > 0 && 
+             data.relationship in ['Self', 'Spouse', 'Child', 'Parent', 'Other'];
+    }
+
+    function isValidRecord() {
+      let data = request.resource.data;
+      return data.type in ['Prescription', 'Lab Report', 'Visit Summary', 'Other'] &&
+             data.date is string && data.summary is string;
+    }
+
     // ===============================================================
     // Rules
-    // ===============================================================
+    // = :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     
     match /users/{userId} {
       allow read, write: if isOwner(userId);
@@ -28,15 +40,12 @@ service cloud.firestore {
       
       match /profiles/{profileId} {
         allow read: if isOwner(userId);
-        allow create, update: if isOwner(userId) && 
-          request.resource.data.name is string && 
-          request.resource.data.relationship in ['Self', 'Spouse', 'Child', 'Parent', 'Other'];
+        allow create, update: if isOwner(userId) && isValidProfile();
         allow delete: if isOwner(userId);
         
         match /records/{recordId} {
           allow read: if isOwner(userId);
-          allow create, update: if isOwner(userId) && 
-            request.resource.data.type in ['Prescription', 'Lab Report', 'Visit Summary', 'Other'];
+          allow create, update: if isOwner(userId) && isValidRecord();
           allow delete: if isOwner(userId);
         }
         
@@ -47,6 +56,13 @@ service cloud.firestore {
             request.resource.data.active is bool;
           allow delete: if isOwner(userId);
         }
+      }
+
+      // HIPAA Compliance: Audit Logs (Write-only for users, no read/delete)
+      match /audit_logs/{logId} {
+        allow create: if isOwner(userId) && 
+          request.resource.data.keys().hasAll(['action', 'timestamp', 'details']);
+        allow read, update, delete: if false;
       }
     }
     
