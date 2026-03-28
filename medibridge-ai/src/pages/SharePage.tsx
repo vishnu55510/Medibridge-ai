@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { ShareLink, MedicalRecord } from '../types';
+import { AuditLogger } from '../utils/AuditLogger';
 
 export default function SharePage() {
   const { shareId } = useParams<{ shareId: string }>();
@@ -36,6 +37,12 @@ export default function SharePage() {
 
         setShareData(data);
         
+        // HIPAA Audit Log: Log access to shared data
+        await AuditLogger.log(data.userId || 'anonymous_provider', 'SHARE_LINK_ACCESS', { 
+          shareId, 
+          profileId: data.profileId 
+        });
+
         // Use the records embedded in the share document
         if (data.records) {
           setRecords(data.records);
