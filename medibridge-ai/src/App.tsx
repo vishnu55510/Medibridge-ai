@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './firebase';
 import { ProfileProvider } from './contexts/ProfileContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load components
 const Auth = React.lazy(() => import('./components/Auth'));
@@ -44,38 +45,40 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <ProfileProvider user={user}>
-        <Suspense fallback={
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-          </div>
-        }>
-          <Routes>
-            <Route path="/share/:shareId" element={<SharePage />} />
-            
-            {user ? (
-              <Route path="/" element={<Layout user={user} />}>
-                <Route index element={<DashboardPage user={user} />} />
-                <Route path="timeline" element={<TimelinePage user={user} />} />
-                <Route path="upload" element={<UploadPage user={user} />} />
-                <Route path="medications" element={<MedicationsPage user={user} />} />
-                <Route path="chat" element={<ChatPage user={user} />} />
-                <Route path="emergency" element={<EmergencyPage user={user} />} />
-                <Route path="profile" element={<ProfilePage user={user} />} />
-                <Route path="labs" element={<LabTrendsPage user={user} />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Route>
-            ) : (
-              <>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="*" element={<Navigate to="/auth" replace />} />
-              </>
-            )}
-          </Routes>
-        </Suspense>
-      </ProfileProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ProfileProvider user={user}>
+          <Suspense fallback={
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/share/:shareId" element={<SharePage />} />
+              
+              {user ? (
+                <Route path="/" element={<Layout user={user} />}>
+                  <Route index element={<DashboardPage user={user} />} />
+                  <Route path="timeline" element={<TimelinePage user={user} />} />
+                  <Route path="upload" element={<UploadPage user={user} />} />
+                  <Route path="medications" element={<MedicationsPage user={user} />} />
+                  <Route path="chat" element={<ChatPage user={user} />} />
+                  <Route path="emergency" element={<EmergencyPage user={user} />} />
+                  <Route path="profile" element={<ProfilePage user={user} />} />
+                  <Route path="labs" element={<LabTrendsPage user={user} />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              ) : (
+                <>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<Navigate to="/auth" replace />} />
+                </>
+              )}
+            </Routes>
+          </Suspense>
+        </ProfileProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

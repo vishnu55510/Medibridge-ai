@@ -8,10 +8,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Activity, TrendingUp } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
-interface LabTrendsPageProps {
-  user: User;
-}
-
+/**
+ * LabTrendsPage Component
+ * 
+ * Provides a visual dashboard of medical lab results over time using Recharts
+ * and leverages Google Gemini AI to analyze trends and correlate them with patient history.
+ * 
+ * @param {LabTrendsPageProps} props - Component props containing the current authenticated user.
+ */
 export default function LabTrendsPage({ user }: LabTrendsPageProps) {
   const { activeProfile } = useProfile();
   const [labRecords, setLabRecords] = useState<MedicalRecord[]>([]);
@@ -69,7 +73,19 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: prompt,
+        contents: `As a medical data assistant, analyze these lab trends for ${activeProfile?.name}. 
+        Identify specific biomarker changes (e.g., rising/falling trends), provide clinical context for these values, 
+        and suggest general lifestyle or monitoring questions for their next doctor visit. 
+        
+        DATA:
+        ${labDataContext}
+        
+        RESPONSE FORMAT:
+        - Key Observations: [3 bullet points]
+        - Potential Trends: [Brief paragraph]
+        - Recommended Questions for Doctor: [2-3 points]
+        
+        (Disclaimer: Always include a medical disclaimer that this is AI-generated and not professional medical advice.)`,
       });
 
       setInsights(response.text || 'No insights generated.');
@@ -106,13 +122,16 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
     return dataPoint;
   }).filter(dp => Object.keys(dp).length > 1); // Only keep points with actual data
 
-  // Find unique metric names for lines
-  const metrics = new Set<string>();
-  chartData.forEach(dp => {
-    Object.keys(dp).forEach(key => {
-      if (key !== 'date') metrics.add(key);
+  // Extract unique metric names for charting logic
+  const metrics = React.useMemo(() => {
+    const set = new Set<string>();
+    chartData.forEach(dp => {
+      Object.keys(dp).forEach(key => {
+        if (key !== 'date') set.add(key);
+      });
     });
-  });
+    return Array.from(set);
+  }, [chartData]);
 
   if (!activeProfile) return <div>Please select a profile.</div>;
 
@@ -180,7 +199,7 @@ export default function LabTrendsPage({ user }: LabTrendsPageProps) {
                       contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                    {Array.from(metrics).map((metric, index) => {
+                    {metrics.map((metric, index) => {
                       // Generate a consistent color based on the metric name
                       const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
                       const color = colors[index % colors.length];

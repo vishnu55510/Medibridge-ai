@@ -5,10 +5,15 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useProfile } from '../contexts/ProfileContext';
 import { UserProfile } from '../types';
 
-interface ProfilePageProps {
-  user: User;
-}
-
+/**
+ * ProfilePage Component
+ * 
+ * Manages health profiles for the user and their family members.
+ * Supports creating new profiles and switching between active profiles
+ * for context-specific data views.
+ * 
+ * @param {ProfilePageProps} props - Component props containing the authenticated user.
+ */
 export default function ProfilePage({ user }: ProfilePageProps) {
   const { profiles, activeProfile, setActiveProfile } = useProfile();
   const [isCreating, setIsCreating] = useState(false);

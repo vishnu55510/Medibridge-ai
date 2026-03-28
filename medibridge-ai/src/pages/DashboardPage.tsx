@@ -7,10 +7,15 @@ import { MedicalRecord, Medication } from '../types';
 import { Link } from 'react-router-dom';
 import { Activity, Pill, Clock, FileText, ChevronRight } from 'lucide-react';
 
-interface DashboardPageProps {
-  user: User;
-}
-
+/**
+ * DashboardPage Component
+ * 
+ * The primary entry point for the application. Displays a high-level summary
+ * of recent medical records, active medications, and quick actions.
+ * Optimized with real-time listeners and skeleton loading states.
+ * 
+ * @param {DashboardPageProps} props - Component props containing the authenticated user.
+ */
 export default function DashboardPage({ user }: DashboardPageProps) {
   const { activeProfile, isLoading } = useProfile();
   const [recentRecords, setRecentRecords] = useState<MedicalRecord[]>([]);

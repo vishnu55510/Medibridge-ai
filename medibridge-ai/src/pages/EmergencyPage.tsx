@@ -6,10 +6,14 @@ import { useProfile } from '../contexts/ProfileContext';
 import { Medication } from '../types';
 import { AlertTriangle, Pill, Phone, User as UserIcon } from 'lucide-react';
 
-interface EmergencyPageProps {
-  user: User;
-}
-
+/**
+ * EmergencyPage Component
+ * 
+ * Provides a high-visibility, read-only summary of critical patient information
+ * (Blood Type, Allergies, Medications) designed for emergency first responders.
+ * 
+ * @param {EmergencyPageProps} props - Component props containing the authenticated user.
+ */
 export default function EmergencyPage({ user }: EmergencyPageProps) {
   const { activeProfile } = useProfile();
   const [activeMeds, setActiveMeds] = useState<Medication[]>([]);

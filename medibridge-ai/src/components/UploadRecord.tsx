@@ -6,11 +6,14 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { GoogleGenAI } from '@google/genai';
 import { UploadCloud, File, Loader2, CheckCircle } from 'lucide-react';
 
-interface UploadRecordProps {
-  user: User;
-  profileId: string;
-}
-
+/**
+ * UploadRecord Component
+ * 
+ * Handles medical document uploads (Images/PDFs), performs AI-based 
+ * information extraction via Gemini, and persists structured records to Firestore.
+ * 
+ * @param {UploadRecordProps} props - Component props containing user and profile context.
+ */
 const UploadRecord = React.memo(function UploadRecord({ user, profileId }: UploadRecordProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -40,22 +43,23 @@ const UploadRecord = React.memo(function UploadRecord({ user, profileId }: Uploa
       // 2. Process with Gemini to extract structured data
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const prompt = `
-        You are an expert medical data extractor. Analyze this medical document (prescription, lab result, clinical note, etc.).
-        Extract the following information and return it strictly as a JSON object:
+        You are an expert clinical data analyst. Analyze this medical document.
+        Extract precisely the following structured fields and return strictly as JSON:
+        
         {
           "type": "prescription" | "lab_result" | "clinical_note" | "other",
-          "date": "YYYY-MM-DD" (if found, else null),
-          "doctorName": "Name of doctor" (if found, else null),
-          "hospital": "Name of hospital/facility" (if found, else null),
-          "summary": "A brief 1-2 sentence summary of what this document is",
+          "date": "YYYY-MM-DD",
+          "doctorName": "full name",
+          "hospital": "facility name",
+          "summary": "concise medical summary",
           "extractedData": {
-             // For prescriptions: list of medications with dosage, frequency, instructions
-             // For lab results: list of tests and values
-             // For clinical notes: key findings, conditions, recommendations
-             // Put all detailed extracted information here in a structured format
+             "tests": [{"name": "test name", "value": "numeric or text", "unit": "unit", "range": "normal range"}],
+             "medications": [{"name": "drug", "dosage": "dose", "frequency": "frequency", "instructions": "notes"}],
+             "findings": ["list of key clinical results"]
           }
         }
-        Return ONLY the JSON. No markdown formatting, no backticks.
+        
+        If a field is missing, use null. For lab results, prioritize numeric values in the 'tests' array.
       `;
 
       const response = await ai.models.generateContent({

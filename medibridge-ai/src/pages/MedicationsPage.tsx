@@ -6,10 +6,15 @@ import { useProfile } from '../contexts/ProfileContext';
 import { Medication } from '../types';
 import { Pill, Clock, Calendar, Check, X, Plus, Trash2 } from 'lucide-react';
 
-interface MedicationsPageProps {
-  user: User;
-}
-
+/**
+ * MedicationsPage Component
+ * 
+ * Manages the patient's active and historical medications list.
+ * Integrates with Firestore for real-time updates and provides a clean UI
+ * for adding, toggling, and removing medications.
+ * 
+ * @param {MedicationsPageProps} props - Component props containing the authenticated user.
+ */
 export default function MedicationsPage({ user }: MedicationsPageProps) {
   const { activeProfile } = useProfile();
   const [medications, setMedications] = useState<Medication[]>([]);
