@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
@@ -6,10 +6,9 @@ import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import { Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 interface ChatInterfaceProps {
   user: User;
+  profileId: string;
 }
 
 interface Message {
@@ -17,7 +16,7 @@ interface Message {
   content: string;
 }
 
-export default function ChatInterface({ user }: ChatInterfaceProps) {
+const ChatInterface = React.memo(function ChatInterface({ user, profileId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
@@ -38,7 +37,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
     const fetchRecords = async () => {
       try {
         const q = query(
-          collection(db, 'users', user.uid, 'records'),
+          collection(db, 'users', user.uid, 'profiles', profileId, 'records'),
           orderBy('createdAt', 'desc')
         );
         const snapshot = await getDocs(q);
@@ -48,7 +47,8 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
           return `
 Type: ${data.type}
 Date: ${data.date}
-Doctor: ${data.doctorName}
+Doctor: ${data.doctor || data.doctorName || 'Unknown'}
+Hospital: ${data.hospital || 'Unknown'}
 Summary: ${data.summary}
 Details: ${data.extractedData}
           `;
@@ -60,12 +60,12 @@ Details: ${data.extractedData}
           
         setMedicalContext(contextString);
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `users/${user.uid}/records`);
+        handleFirestoreError(error, OperationType.GET, `users/${user.uid}/profiles/${profileId}/records`);
       }
     };
 
     fetchRecords();
-  }, [user.uid]);
+  }, [user.uid, profileId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +77,7 @@ Details: ${data.extractedData}
     setIsLoading(true);
 
     try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const systemInstruction = `
         You are MediBridge AI, a personalized health assistant. 
         You must answer the user's questions and provide recommendations BASED STRICTLY AND ONLY on their previous medical records provided below.
@@ -86,24 +87,6 @@ Details: ${data.extractedData}
         USER'S MEDICAL RECORDS:
         ${medicalContext}
       `;
-
-      // Convert previous messages to Gemini format
-      const history = messages.slice(1).map(msg => ({
-        role: msg.role === 'model' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      }));
-
-      const chat = ai.chats.create({
-        model: 'gemini-3.1-pro-preview',
-        config: {
-          systemInstruction,
-          temperature: 0.2 // Keep it factual and grounded
-        }
-      });
-
-      // Send history manually if needed, or just send the latest message
-      // Note: The SDK chat object doesn't easily let us initialize with history in this version, 
-      // so we will just use generateContent with the full history.
       
       const contents = [
         ...messages.slice(1).map(msg => ({
@@ -132,16 +115,16 @@ Details: ${data.extractedData}
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="bg-indigo-600 px-6 py-4 flex items-center gap-3">
-        <Bot className="h-6 w-6 text-white" />
+    <section className="flex flex-col h-full" aria-label="Health Assistant Chat">
+      <header className="bg-indigo-600 px-6 py-4 flex items-center gap-3">
+        <Bot className="h-6 w-6 text-white" aria-hidden="true" />
         <div>
           <h2 className="text-white font-semibold">MediBridge Assistant</h2>
           <p className="text-indigo-100 text-xs">Powered by your medical history</p>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50" role="log" aria-live="polite">
         {messages.map((msg, index) => (
           <div 
             key={index} 
@@ -149,7 +132,7 @@ Details: ${data.extractedData}
           >
             <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
               msg.role === 'user' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-600'
-            }`}>
+            }`} aria-hidden="true">
               {msg.role === 'user' ? <UserIcon className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
             </div>
             <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${
@@ -157,6 +140,7 @@ Details: ${data.extractedData}
                 ? 'bg-indigo-600 text-white rounded-tr-none' 
                 : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
             }`}>
+              <span className="sr-only">{msg.role === 'user' ? 'You said:' : 'Assistant said:'}</span>
               {msg.role === 'user' ? (
                 <p>{msg.content}</p>
               ) : (
@@ -168,38 +152,44 @@ Details: ${data.extractedData}
           </div>
         ))}
         {isLoading && (
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center">
+          <div className="flex gap-4" aria-live="assertive">
+            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center" aria-hidden="true">
               <Bot className="h-5 w-5" />
             </div>
             <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-5 py-4 shadow-sm flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+              <Loader2 className="h-4 w-4 animate-spin text-indigo-600" aria-hidden="true" />
               <span className="text-sm text-slate-500">Analyzing your records...</span>
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} tabIndex={-1} />
       </div>
 
-      <div className="p-4 bg-white border-t border-slate-200">
+      <footer className="p-4 bg-white border-t border-slate-200">
         <form onSubmit={handleSendMessage} className="flex gap-2">
+          <label htmlFor="chat-input" className="sr-only">Type your message</label>
           <input
+            id="chat-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about your medications, conditions, or history..."
             className="flex-1 rounded-full border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             disabled={isLoading}
+            autoComplete="off"
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="bg-indigo-600 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Send message"
+            className="bg-indigo-600 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-5 w-5" aria-hidden="true" />
           </button>
         </form>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
-}
+});
+
+export default ChatInterface;

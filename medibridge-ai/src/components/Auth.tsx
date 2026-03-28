@@ -33,13 +33,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8">
+    <main id="main-content" className="min-h-screen flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8" role="main">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center">
+          <div className="mx-auto h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center" aria-hidden="true">
             <Stethoscope className="h-8 w-8 text-indigo-600" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-slate-900">MediBridge AI</h2>
+          <h1 className="mt-6 text-3xl font-extrabold text-slate-900">MediBridge AI</h1>
           <p className="mt-2 text-sm text-slate-600">
             Your personal bridge between unstructured medical data and actionable health insights.
           </p>
@@ -47,12 +47,13 @@ export default function Auth() {
         <div className="mt-8">
           <button
             onClick={handleSignIn}
+            aria-label="Sign in with Google"
             className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
           >
             Sign in with Google
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

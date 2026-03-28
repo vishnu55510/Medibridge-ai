@@ -1,11 +1,42 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getMessaging, isSupported, getToken, onMessage } from 'firebase/messaging';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
+
+// Initialize Firebase Cloud Messaging conditionally
+export const getMessagingInstance = async () => {
+  const supported = await isSupported();
+  if (supported) {
+    return getMessaging(app);
+  }
+  return null;
+};
+
+export const requestNotificationPermission = async () => {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const msg = await getMessagingInstance();
+      if (msg) {
+        // In a real app, you'd need a VAPID key here from Firebase Console
+        // const token = await getToken(msg, { vapidKey: 'YOUR_VAPID_KEY' });
+        // For now, we just request permission
+        console.log('Notification permission granted.');
+        return true;
+      }
+    } else {
+      console.log('Unable to get permission to notify.');
+    }
+  } catch (error) {
+    console.error('Error requesting notification permission:', error);
+  }
+  return false;
+};
 
 export enum OperationType {
   CREATE = 'create',

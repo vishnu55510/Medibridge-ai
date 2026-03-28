@@ -1,81 +1,78 @@
 {
   "entities": {
-    "User": {
-      "title": "User",
-      "description": "User profile information",
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "A health profile for the user or a family member",
       "type": "object",
       "properties": {
-        "uid": {
-          "type": "string",
-          "description": "The user's unique ID"
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address"
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's display name"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "When the user profile was created"
-        }
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "allergies": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "createdAt"]
+      "required": ["name", "relationship"]
     },
     "MedicalRecord": {
       "title": "Medical Record",
-      "description": "A structured medical record extracted from unstructured input",
+      "description": "An extracted medical record",
       "type": "object",
       "properties": {
-        "userId": {
-          "type": "string",
-          "description": "The ID of the user who owns this record"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of record (e.g., prescription, lab_result, clinical_note)"
-        },
-        "date": {
-          "type": "string",
-          "description": "Date of the record"
-        },
-        "doctorName": {
-          "type": "string",
-          "description": "Name of the doctor or provider"
-        },
-        "summary": {
-          "type": "string",
-          "description": "A brief summary of the record"
-        },
-        "extractedData": {
-          "type": "string",
-          "description": "JSON string containing the detailed extracted data (medications, conditions, etc.)"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "When this record was uploaded and processed"
-        }
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "doctor": { "type": "string" },
+        "hospital": { "type": "string" },
+        "summary": { "type": "string" },
+        "extractedData": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "type", "extractedData", "createdAt"]
+      "required": ["type", "date"]
+    },
+    "Medication": {
+      "title": "Medication",
+      "description": "A tracked medication",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "dosage": { "type": "string" },
+        "frequency": { "type": "string" },
+        "schedule": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "dosage", "frequency"]
+    },
+    "ShareLink": {
+      "title": "Share Link",
+      "description": "A secure sharing link for a doctor",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "profileId": { "type": "string" },
+        "recordIds": { "type": "array", "items": { "type": "string" } },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "profileId"]
     }
   },
   "firestore": {
-    "users/{userId}": {
-      "schema": {
-        "$ref": "#/entities/User"
-      },
-      "description": "Stores user profiles"
+    "users/{userId}/profiles/{profileId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Profiles belonging to a user"
     },
-    "users/{userId}/records/{recordId}": {
-      "schema": {
-        "$ref": "#/entities/MedicalRecord"
-      },
-      "description": "Stores medical records for a specific user"
+    "users/{userId}/profiles/{profileId}/records/{recordId}": {
+      "schema": { "$ref": "#/entities/MedicalRecord" },
+      "description": "Medical records for a specific profile"
+    },
+    "users/{userId}/profiles/{profileId}/medications/{medId}": {
+      "schema": { "$ref": "#/entities/Medication" },
+      "description": "Medications for a specific profile"
+    },
+    "shares/{shareId}": {
+      "schema": { "$ref": "#/entities/ShareLink" },
+      "description": "Publicly accessible share links (read-only, checked by expiry)"
     }
   }
 }
