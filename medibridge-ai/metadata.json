@@ -1,0 +1,5 @@
+{
+  "name": "MediBridge AI",
+  "description": "A universal bridge that extracts structured medical data from unstructured prescriptions and records, powering a personalized health assistant.",
+  "requestFramePermissions": []
+}
